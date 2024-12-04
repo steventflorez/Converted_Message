@@ -1,5 +1,16 @@
-<div style="text-align:center">
-  <h1>Json to Excel</h1>
-  <input type="file" (change)="onFileChange($event)" />
-  <button (click)="exportToExcel()">Exportar a Excel</button>
+<div style="text-align:center" class="d-flex justify-content-center align-items-center">
+
+  <div class="card bg-light mb-3 mt-5" style="max-width: 50rem;">
+    <div class="card-header"><h1>CSV to XLSX</h1></div>
+    <div class="card-body">
+      <div>
+        <label for="formFile" class="form-label mt-4">Subir Archivo</label>
+        <input class="form-control" type="file" id="formFile" (change)="onFileChange($event)">
+      </div>
+      <p *ngIf="messageAlert" class="text-danger mt-3">Archivo no Permitido</p>
+      <button *ngIf="btnShow" class="btn btn-lg btn-primary mt-5" type="button" (click)="exportToExcel()">Exportar a Excel</button>
+    </div>
+  </div>
+
 </div>
+

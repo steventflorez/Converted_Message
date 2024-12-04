@@ -5,21 +5,21 @@ import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  templateUrl: './app.component.html'
 })
 export class AppComponent {
 
   private readonly EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
 
-  jsonDataFormated = []
   headerModel:  Record<string, any> = {};
-  headerAraay: string[] = []
 
+  btnShow: boolean = false;
+  messageAlert: boolean = false;
   data: any[] = [];
 
   onFileChange(event: any): void {
+    this.btnShow = false;
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -63,14 +63,17 @@ export class AppComponent {
               this.headerModel[key] = this.headerModel[key] || "";
             }
           }
+          this.messageAlert = false
+          this.btnShow = true
         } else {
+          this.messageAlert = true
           console.log('eventParameters no encontrados');
         }
       } catch (error) {
+        this.messageAlert = true
         console.error('Error al parsear JSON:', error);
       }
     });
-    console.log(this.headerModel)
   }
 
   exportToExcel(): void {
@@ -106,27 +109,19 @@ export class AppComponent {
       };
 
       orderedHeaders.forEach((header) => {
-        let headerCodif = corregirCodificacion(header)
+        let headerCodif = this.corregirCodificacion(header)
         const [baseKey, arrayItem] = headerCodif.split(" | ");
         if (arrayItem) {
           formattedRow[headerCodif] = Array.isArray(flowResponse[baseKey]) && flowResponse[baseKey].includes(arrayItem) ? "Sí" : "";
         } else {
-          formattedRow[headerCodif] = corregirCodificacion(flowResponse[headerCodif]) || "";
+          formattedRow[headerCodif] = this.corregirCodificacion(flowResponse[headerCodif]) || "";
         }
       });
 
       return formattedRow;
     });
 
-    function corregirCodificacion(texto:string) {
-      // Convertir la cadena mal codificada a un Uint8Array y luego decodificarla correctamente
-      let encoder = new TextEncoder();
-      let decoder = new TextDecoder("utf-8");
 
-      // Simular el problema de codificación, pasando por bytes mal interpretados
-      let bytes = encoder.encode(texto);
-      return decoder.decode(bytes);
-    }
 
     // Crear la hoja de Excel
     const worksheet = XLSX.utils.json_to_sheet(filteredData);
@@ -141,9 +136,14 @@ export class AppComponent {
     saveAs(dataBlob, 'Datos_Exportados.xlsx');
   }
 
-  private saveAsExcelFile(buffer: any, fileName: string): void {
-    const data: Blob = new Blob([buffer], { type: this.EXCEL_TYPE });
-    saveAs(data, `${fileName}.xlsx`);
+   corregirCodificacion(texto:string) {
+    // Convertir la cadena mal codificada a un Uint8Array y luego decodificarla correctamente
+    let encoder = new TextEncoder();
+    let decoder = new TextDecoder("utf-8");
+
+    // Simular el problema de codificación, pasando por bytes mal interpretados
+    let bytes = encoder.encode(texto);
+    return decoder.decode(bytes);
   }
 
 
