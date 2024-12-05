@@ -112,9 +112,9 @@ export class AppComponent {
         let headerCodif = this.corregirCodificacion(header)
         const [baseKey, arrayItem] = headerCodif.split(" | ");
         if (arrayItem) {
-          formattedRow[headerCodif] = Array.isArray(flowResponse[baseKey]) && flowResponse[baseKey].includes(arrayItem) ? "Sí" : "";
+          formattedRow[arrayItem] = Array.isArray(flowResponse[baseKey]) && flowResponse[baseKey].includes(arrayItem) ? "X" : "";
         } else {
-          formattedRow[headerCodif] = this.corregirCodificacion(flowResponse[headerCodif]) || "";
+          formattedRow[baseKey] = this.corregirCodificacion(flowResponse[headerCodif]) || "";
         }
       });
 
