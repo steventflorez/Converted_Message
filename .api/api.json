@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "apis": [
+    {
+      "identifier": "indigitall",
+      "source": "@indigitall/v1.0#g16kqv31lkhz322v",
+      "integrity": "sha512-Au9lRZFzxrhJgqxuCzlaIXKSUu3m6yVurcMbEKNjzYVUDNa7BZ+zLNoLxFjg27us7dALaE4F4htP2Q8fVcgClA==",
+      "installerVersion": "6.1.2"
+    }
+  ]
+}

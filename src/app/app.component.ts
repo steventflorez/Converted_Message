@@ -102,8 +102,10 @@ export class AppComponent {
 
       let [fecha , hora] = row.messageDate.split('T');
       hora = hora.split('+')[0]
+      console.log(row)
       const formattedRow: any = {
         messageId: row.messageId || "",
+        telefono: row.contactId,
         fecha: fecha|| "",
         hora: hora || "",
       };
