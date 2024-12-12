@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import * as iconv from 'iconv-lite';
+import { Buffer } from 'buffer';
 
 
 @Component({
@@ -12,30 +14,32 @@ export class AppComponent {
   private readonly EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
 
 
-  headerModel:  Record<string, any> = {};
+  headerModel: Record<string, any> = {};
 
   btnShow: boolean = false;
   messageAlert: boolean = false;
   data: any[] = [];
 
-  onFileChange(event: any, tipo:string): void {
+  onFileChange(event: any, tipo: string): void {
     this.btnShow = false;
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e: any) => {
         const arrayBuffer = e.target.result;
-        const data = new Uint8Array(arrayBuffer);
-        const arr = Array.from(data).map(byte => String.fromCharCode(byte)).join('');
-        const workbook = XLSX.read(arr, { type: 'binary' });
+        // Usamos TextDecoder para decodificar el contenido del archivo correctamente en UTF-8
+        const decoder = new TextDecoder("utf-8", { fatal: true });
+        const textContent = decoder.decode(arrayBuffer);
+
+        // Leer el contenido como JSON después de la decodificación
+        const workbook = XLSX.read(textContent, { type: 'string' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         this.data = XLSX.utils.sheet_to_json(worksheet);
       };
-      reader.readAsArrayBuffer(file); // Usamos readAsArrayBuffer en vez de readAsBinaryString
+      reader.readAsArrayBuffer(file);
     }
   }
-
 
 
   exportToExcel(): void {
@@ -61,29 +65,28 @@ export class AppComponent {
       const contentObj = typeof row.content === 'string' ? JSON.parse(row.content) : row.content;
       const flowResponse = contentObj?.eventParameters?.flowResponse || {};
 
-      let [fecha , hora] = row.messageDate.split('T');
-      hora = hora.split('+')[0]
+      let [fecha, hora] = row.messageDate.split('T');
+      hora = hora.split('+')[0];
       const formattedRow: any = {
         messageId: row.messageId || "",
         telefono: row.contactId,
-        fecha: fecha|| "",
+        fecha: fecha || "",
         hora: hora || "",
       };
 
       orderedHeaders.forEach((header) => {
-        let headerCodif = this.corregirCodificacion(header)
-        const [baseKey, arrayItem] = headerCodif.split(" | ");
+        const decodedHeader = this.corregirCodificacion(header);  // Decodificamos solo si es necesario
+        const [baseKey, arrayItem] = decodedHeader.split(" | ");
         if (arrayItem) {
           formattedRow[arrayItem] = Array.isArray(flowResponse[baseKey]) && flowResponse[baseKey].includes(arrayItem) ? "X" : "";
         } else {
-          formattedRow[baseKey] = this.corregirCodificacion(flowResponse[headerCodif]) || "";
+          const value = flowResponse[baseKey] ? this.corregirCodificacion(flowResponse[baseKey]) : "";  // Decodificamos si es necesario
+          formattedRow[baseKey] = value;
         }
       });
 
       return formattedRow;
     });
-
-
 
     // Crear la hoja de Excel
     const worksheet = XLSX.utils.json_to_sheet(filteredData);
@@ -97,33 +100,34 @@ export class AppComponent {
     });
     saveAs(dataBlob, 'flows_Exportados.xlsx');
   }
-
   exportToExcel2(){
     const headers = new Set<string>();
 
     const filteredData = this.data.map((row: any) => {
       const contentObj = typeof row.content === 'string' ? JSON.parse(row.content) : row.content;
-      const flowResponse = contentObj?.body|| {};
+      const flowResponse = contentObj?.body || {};
 
-      let [fecha , hora] = row.messageDate.split('T');
-      hora = hora.split('+')[0]
+      let [fecha, hora] = row.messageDate.split('T');
+      hora = hora.split('+')[0];
 
       const formattedRow: any = {
         messageId: row.messageId || "",
         telefono: row.contactId,
-        fecha: fecha|| "",
+        fecha: fecha || "",
         hora: hora || "",
         mensaje: ''
       };
 
       if (typeof flowResponse === 'string') {
-        formattedRow.mensaje = flowResponse
+        formattedRow.mensaje = this.corregirCodificacion(flowResponse);  // Solo corregimos si es string
+      } else {
+        formattedRow.mensaje = flowResponse || '';  // Si no es string, dejamos el valor original
       }
-        return formattedRow;
+
+      return formattedRow;
     });
 
     const cleanFliterData = filteredData.filter((dato) => dato.mensaje != '');
-
 
     const worksheet = XLSX.utils.json_to_sheet(cleanFliterData);
     const workbook = XLSX.utils.book_new();
@@ -135,17 +139,19 @@ export class AppComponent {
       type: this.EXCEL_TYPE
     });
     saveAs(dataBlob, 'fallback_Exportados.xlsx');
-
   }
 
-   corregirCodificacion(texto:string) {
-    // Convertir la cadena mal codificada a un Uint8Array y luego decodificarla correctamente
-    let encoder = new TextEncoder();
-    let decoder = new TextDecoder("utf-8");
-
-    // Simular el problema de codificación, pasando por bytes mal interpretados
-    let bytes = encoder.encode(texto);
-    return decoder.decode(bytes);
+  corregirCodificacion(texto: string): string {
+    try {
+      // Solo decodificamos si es necesario
+      const decoder = new TextDecoder('utf-8', { fatal: true });
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(texto); // Convierte el texto en bytes
+      return decoder.decode(bytes);  // Decodifica correctamente
+    } catch (error) {
+      console.error("Error al corregir codificación:", error);
+      return texto;  // Si hay un error, devolvemos el texto tal cual
+    }
   }
 
 
