@@ -1,14 +1,30 @@
 <div style="text-align:center" class="d-flex justify-content-center align-items-center">
 
   <div class="card bg-light mb-3 mt-5" style="max-width: 50rem;">
-    <div class="card-header"><h1>CSV to XLSX</h1></div>
+    <div class="card-header"><h1>CSV to XLSX</h1><h5 class="text-info">Mensajes Flows</h5></div>
     <div class="card-body">
       <div>
         <label for="formFile" class="form-label mt-4">Subir Archivo</label>
-        <input class="form-control" type="file" id="formFile" (change)="onFileChange($event)">
+        <input class="form-control" type="file" id="formFile" (change)="onFileChange($event,'flows')">
       </div>
-      <p *ngIf="messageAlert" class="text-danger mt-3">Archivo no Permitido</p>
-      <button *ngIf="btnShow" class="btn btn-lg btn-primary mt-5" type="button" (click)="exportToExcel()">Exportar a Excel</button>
+
+      <button class="btn btn-lg btn-primary mt-5" type="button" (click)="exportToExcel()">Exportar a Excel</button>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center" class="d-flex justify-content-center align-items-center">
+
+  <div class="card bg-light mb-3 mt-5" style="max-width: 50rem;">
+    <div class="card-header"><h1>CSV to XLSX</h1><h5 class="text-info">Mensajes Fallback</h5></div>
+    <div class="card-body">
+      <div>
+        <label for="formFile" class="form-label mt-4">Subir Archivo</label>
+        <input class="form-control" type="file" id="formFile" (change)="onFileChange($event,'fallback')">
+      </div>
+
+      <button  class="btn btn-lg btn-primary mt-5" type="button" (click)="exportToExcel2()">Exportar a Excel</button>
     </div>
   </div>
 

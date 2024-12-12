@@ -18,7 +18,7 @@ export class AppComponent {
   messageAlert: boolean = false;
   data: any[] = [];
 
-  onFileChange(event: any): void {
+  onFileChange(event: any, tipo:string): void {
     this.btnShow = false;
     const file = event.target.files[0];
     if (file) {
@@ -31,54 +31,15 @@ export class AppComponent {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         this.data = XLSX.utils.sheet_to_json(worksheet);
-
-        console.log(this.data);
-        this.createHeader()// Muestra el JSON cargado
       };
       reader.readAsArrayBuffer(file); // Usamos readAsArrayBuffer en vez de readAsBinaryString
     }
   }
 
-  createHeader() {
-    this.data.forEach(dato => {
-      try {
-        // Intenta convertir el contenido a JSON
-        const contentObj = typeof dato.content === 'string' ? JSON.parse(dato.content) : dato.content;
 
-        // Accede a eventParameters
-        if (contentObj?.eventParameters) {
-          let flowResponse = contentObj.eventParameters.flowResponse;
-
-          for (let key in flowResponse) {
-            if (Array.isArray(flowResponse[key])) {
-              if (!this.headerModel[key]) {
-                this.headerModel[key] = [];
-              }
-              flowResponse[key].forEach((item: string) => {
-                if (!this.headerModel[key].includes(item)) {
-                  this.headerModel[key].push(item);
-                }
-              });
-            } else {
-              this.headerModel[key] = this.headerModel[key] || "";
-            }
-          }
-          this.messageAlert = false
-          this.btnShow = true
-        } else {
-          this.messageAlert = true
-          console.log('eventParameters no encontrados');
-        }
-      } catch (error) {
-        this.messageAlert = true
-        console.error('Error al parsear JSON:', error);
-      }
-    });
-  }
 
   exportToExcel(): void {
     const headers = new Set<string>();
-
     // Generar los encabezados dinámicos
     this.data.forEach((row: any) => {
       const contentObj = typeof row.content === 'string' ? JSON.parse(row.content) : row.content;
@@ -102,7 +63,6 @@ export class AppComponent {
 
       let [fecha , hora] = row.messageDate.split('T');
       hora = hora.split('+')[0]
-      console.log(row)
       const formattedRow: any = {
         messageId: row.messageId || "",
         telefono: row.contactId,
@@ -135,7 +95,47 @@ export class AppComponent {
     const dataBlob: Blob = new Blob([excelBuffer], {
       type: this.EXCEL_TYPE
     });
-    saveAs(dataBlob, 'Datos_Exportados.xlsx');
+    saveAs(dataBlob, 'flows_Exportados.xlsx');
+  }
+
+  exportToExcel2(){
+    const headers = new Set<string>();
+
+    const filteredData = this.data.map((row: any) => {
+      const contentObj = typeof row.content === 'string' ? JSON.parse(row.content) : row.content;
+      const flowResponse = contentObj?.body|| {};
+
+      let [fecha , hora] = row.messageDate.split('T');
+      hora = hora.split('+')[0]
+
+      const formattedRow: any = {
+        messageId: row.messageId || "",
+        telefono: row.contactId,
+        fecha: fecha|| "",
+        hora: hora || "",
+        mensaje: ''
+      };
+
+      if (typeof flowResponse === 'string') {
+        formattedRow.mensaje = flowResponse
+      }
+        return formattedRow;
+    });
+
+    const cleanFliterData = filteredData.filter((dato) => dato.mensaje != '');
+
+
+    const worksheet = XLSX.utils.json_to_sheet(cleanFliterData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
+
+    // Exportar a Excel
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const dataBlob: Blob = new Blob([excelBuffer], {
+      type: this.EXCEL_TYPE
+    });
+    saveAs(dataBlob, 'fallback_Exportados.xlsx');
+
   }
 
    corregirCodificacion(texto:string) {
