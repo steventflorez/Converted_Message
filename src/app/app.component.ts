@@ -115,7 +115,8 @@ export class AppComponent {
         telefono: row.contactId,
         fecha: fecha || "",
         hora: hora || "",
-        mensaje: ''
+        mensaje: '',
+        send: row.sendType
       };
 
       if (typeof flowResponse === 'string') {
@@ -127,9 +128,12 @@ export class AppComponent {
       return formattedRow;
     });
 
-    const cleanFliterData = filteredData.filter((dato) => dato.mensaje != '');
+    const cleanFliterData = filteredData.filter(
+      (dato) => /\S/.test(dato.mensaje) && dato.send == 'input'
+    );
 
-    const worksheet = XLSX.utils.json_to_sheet(cleanFliterData);
+    const cleanMessageBlanck = cleanFliterData.filter((d=> typeof d.mensaje == 'string'))
+    const worksheet = XLSX.utils.json_to_sheet(cleanMessageBlanck);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
 
